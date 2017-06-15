@@ -2,7 +2,7 @@
 
 Harmony TV is an social video watching site! Create a lobby, setup a playlist
 and invite your friends to watch some movies with you!
-
+## TODO: find and fix all of the race conditions that I am sure are everywhere in this backend... yepyep.
 ## Development Stack
 
  - the server component is coded in golang and the web view is coded in reactjs (see the react-app subdirectory)
@@ -31,3 +31,6 @@ go build
 ```sh
 ./go-movies-with-friends
 ```
+
+## Notes
+https://codepen.io/frytyler/pen/juGfk

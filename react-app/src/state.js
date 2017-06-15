@@ -1,6 +1,7 @@
 import io from 'socket.io-client';
 
-const socket = io.connect('http://localhost:5000/socket.io/')
+// const socket = io.connect('./socket.io/')
+const socket = io.connect('/socket.io/')
 const lobbies = {}
 socket.on("lobbyUpdateInfo", function(data) {
   const obj = JSON.parse(data)
@@ -10,6 +11,7 @@ socket.on("lobbyUpdateInfo", function(data) {
     lobbies[obj.lobbyName] = obj
   }
 })
+
 socket.emit("enterLobbyList")
 
 export {

@@ -21,7 +21,7 @@ class ViewLogin extends Component {
           <div className={isValid ? "input-group": "input-group has-error"}>
             {input}
             <span className="input-group-btn">
-              <button className="btn btn-default" type="button" disabled={!isValid} onClick={this.onLogin.bind(null, this.state.value)}>Go!</button>
+              <button className="btn btn-primary" type="button" disabled={!isValid} onClick={this.onLogin.bind(null, this.state.value)}>Go!</button>
             </span>
           </div>
         </div>

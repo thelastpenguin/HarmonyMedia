@@ -1,18 +1,27 @@
 package main
 
+// Video is a struct representing a video object
+type Video struct {
+  URL string `json:"url"`
+  Paused bool `json:"paused"`
+  LastUpdated int64 `json:"lastUpdated"`
+  LastPosition int64 `json:"lastPosition"`
+}
+
 // Lobby is a class defining a lobby
 type Lobby struct {
   Name string `json:"lobbyName"`
   Users []*UserSession `json:"users"`
-  IsPublic bool `json:"isPublic"`
+  Password string `json:"-"`
+  PlayingVideo *Video `json:"-"`
 }
 
 // NewLobby - create a new lobby with the given name
-func NewLobby(name string) Lobby {
+func NewLobby(name string, password string) Lobby {
   return Lobby {
     Name: name,
     Users: []*UserSession {},
-    IsPublic: true,
+    Password: password,
   }
 }
 
@@ -31,6 +40,11 @@ func (lobby *Lobby) AddUser(user *UserSession) {
   (*user.Socket).Join(lobby.ChannelName())
   lobby.Users = append(lobby.Users, user)
   user.Lobby = lobby
+
+  // notify the user where we are in the video
+  if lobby.PlayingVideo != nil {
+    (*user.Socket).Emit(EventVideoUpdate, JSONStringify(lobby.PlayingVideo))
+  }
 }
 
 // RemoveUser - removes the user from this channel
@@ -48,18 +62,22 @@ func (lobby *Lobby) RemoveUser(toRemove *UserSession) {
 
   toRemove.Lobby = nil
 
-  if len(Users) == 0 {
+  if len(lobby.Users) == 0 {
     // cleanup the lobby and tear down
     lobby.Cleanup()
   }
 }
 
+// UpdateVideo update the video yep yep
+func (lobby *Lobby) UpdateVideo(video Video) {
+  lobby.PlayingVideo = &video
+  // log.Printf("Broadcasting to %v values: %v\n", lobby.ChannelName(), JSONStringify(video))
+  Server.BroadcastTo(lobby.ChannelName(), EventVideoUpdate, JSONStringify(video))
+}
+
 // BroadcastChange the changes to the channel's state
 func (lobby *Lobby) BroadcastChange() {
-  if lobby.IsPublic {
-    // notify public lobby listing that the channel info changed
-    Server.BroadcastTo(ChannelLobbyList, EventLobbyInfoUpdate, JSONStringify(lobby))
-  }
+  Server.BroadcastTo(ChannelLobbyList, EventLobbyInfoUpdate, JSONStringify(lobby))
   Server.BroadcastTo(lobby.ChannelName(), EventLobbyInfoUpdate, JSONStringify(lobby))
 }
 

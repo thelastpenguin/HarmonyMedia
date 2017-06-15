@@ -9,6 +9,7 @@ import {
 
 import ViewLogin from './views/ViewLogin'
 import ViewLobbyList from './views/ViewLobbyList'
+import ViewLobby from './views/ViewLobby'
 
 import {socket, lobbies} from './state'
 
@@ -32,6 +33,7 @@ class App extends Component {
     this.state = {
       authenticated: null,
       currentView: VIEW_LOGIN,
+      inLobby: null
     }
   }
 
@@ -76,14 +78,10 @@ class App extends Component {
   }
 
   renderLobbyList() {
-    const onPickLobby = (lobbyName) => {
-      console.log(lobbyName)
-    }
-
-    const createNewLobby = (lobbyName, isPrivate) => {
+    const joinOrCreateLobby = (lobbyName, password) => {
       socket.emit("joinLobby", JSON.stringify({
         lobbyName: lobbyName,
-        isPrivate: isPrivate
+        password: password
       }), (respTxt) => {
         const respObj = JSON.parse(respTxt)
         if (respObj.status === "error") {
@@ -98,11 +96,21 @@ class App extends Component {
     return (
       <PageTemplate>
         <ViewLobbyList
-          onPickLobby={onPickLobby}
-          createNewLobby={createNewLobby}
+          onPickLobby={joinOrCreateLobby}
+          createNewLobby={joinOrCreateLobby}
           username={this.state.authenticated.username}/>
       </PageTemplate>
     )
+  }
+
+  renderLobby() {
+    return (
+      <ViewLobby
+        lobbyName={this.state.inLobby}
+        username={this.state.authenticated.username}
+        />
+    )
+
   }
 
   render() {
@@ -110,6 +118,8 @@ class App extends Component {
       return this.renderLogin()
     } else if (this.state.currentView === VIEW_LOBBY_LIST) {
       return this.renderLobbyList()
+    } else if (this.state.currentView === VIEW_LOBBY) {
+      return this.renderLobby()
     }
 
     return (

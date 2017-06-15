@@ -6,41 +6,47 @@ class NewLobbyWidget extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      text: "",
-      private: false
+      name: "",
+      password: ""
     }
   }
 
-  onTextChange(event) {
+  onTextChangeName(event) {
     this.setState({
-      text: event.target.value,
-      private: this.state.private
+      name: event.target.value,
+      password: this.state.password
     })
   }
 
-  onCheckboxChange(event) {
+  onTextChangePassword(event) {
     this.setState({
-      text: this.state.text,
-      private: event.target.checked
+      name: this.state.name,
+      password: event.target.value
     })
   }
 
   render() {
     return (
-      <div className="input-group">
-        <span className="input-group-addon">New Lobby Name</span>
-
-        <input type="text" className="form-control" onChange={this.onTextChange.bind(this)} value={this.state.text} placeholder="Lobby name..."/>
-
-        <span className="input-group-addon">Private?</span>
-
-        <span className="input-group-addon">
-          <input type="checkbox" onChange={this.onCheckboxChange.bind(this)} value={this.state.private} aria-label="Visible"/>
-        </span>
-
-        <span className="input-group-btn">
-          <button className="btn btn-primary" type="button" onClick={this.props.createNewLobby.bind(null, this.state.text, this.state.private)}>Create!</button>
-        </span>
+      <div>
+        <div className="row">
+          <div className="col-lg-offset-2 col-lg-4">
+            <div className="input-group">
+              <span className="input-group-addon">New Lobby Name</span>
+              <input type="text" className="form-control input-sm" onChange={this.onTextChangeName.bind(this)} value={this.state.name} placeholder="Lobby name..."/>
+            </div>
+          </div>
+          <div className="col-lg-4">
+            <div className="input-group">
+              <span className="input-group-addon">Password</span>
+              <input type="text" className="form-control input-sm" onChange={this.onTextChangePassword.bind(this)} value={this.state.password} placeholder="<blank for no lock>"/>
+            </div>
+          </div>
+        </div>
+        <div className="row">
+          <div className="col-lg-offset-2 col-lg-8">
+            <button style={{float: 'right', marginTop: '5px'}} className="btn btn-sm btn-primary" type="button" onClick={this.props.createNewLobby.bind(null, this.state.name, this.state.password)}>Create!</button>
+          </div>
+        </div>
       </div>
     )
   }
@@ -53,12 +59,10 @@ class ViewLobbyList extends Component {
 
     this.state = {
       lobbies: lobbies,
-      createLobbyName: "",
     }
 
     this.lobbyUpdateInfoListener = () => {
       this.setState({
-        createLobbyName: this.state.createLobbyName,
         lobbies: lobbies,
       })
     }
@@ -70,7 +74,6 @@ class ViewLobbyList extends Component {
   }
 
   createNewLobby(lobbyName, shouldBePrivate) {
-    console.log(lobbyName, shouldBePrivate)
     this.props.createNewLobby(lobbyName, shouldBePrivate)
   }
 
@@ -80,10 +83,11 @@ class ViewLobbyList extends Component {
     lobbies = lobbies.map((lobbyName) => {
       const lobby = this.state.lobbies[lobbyName]
       return (
-        <li className="list-group-item" key={lobbyName}>
+        // TODO: add password support here
+        <a className="list-group-item" key={lobbyName} href="#" onClick={this.props.onPickLobby.bind(null, lobbyName, "")}>
           <span className="badge">{lobby.users.length}</span>
           {lobbyName}
-        </li>
+        </a>
       )
     })
 
@@ -99,9 +103,9 @@ class ViewLobbyList extends Component {
           createNewLobby={this.createNewLobby.bind(this)}
           />
 
-        <ul className="list-group">
+        <div className="list-group">
           {lobbies}
-        </ul>
+        </div>
 
       </div>
     )

@@ -5,7 +5,6 @@ import (
   "net/http"
   "encoding/json"
   "strings"
-
   "github.com/googollee/go-socket.io"
 )
 
@@ -43,7 +42,6 @@ func main() {
 
       authenticateReq := AuthenticateReq {}
       if err := json.Unmarshal([]byte(authenticateReqStr), &authenticateReq); err != nil {
-        log.Println("bad request.")
         return JSONStringify(StatusMessage {Status: "error", Message: "Malformatted JSON Object."})
       }
 
@@ -73,6 +71,7 @@ func main() {
 
       type JoinLobbyReq struct {
         LobbyName string `json:"lobbyName"`
+        Password string `json:"Password"`
       }
       request := JoinLobbyReq {}
       if err := json.Unmarshal([]byte(requestStr), &request); err != nil {
@@ -87,10 +86,12 @@ func main() {
       }
 
       // create the lobby if it does not exist.
-      if _, found := Lobbies[request.LobbyName]; !found {
+      if lobby, found := Lobbies[request.LobbyName]; !found {
         log.Printf("Lobby %v did not exist. Creating lobby %v.\n", request.LobbyName, request.LobbyName)
-        newLobby := NewLobby(request.LobbyName)
-        Lobbies[request.LobbyName] = &newLobby
+        newLobby := NewLobby(request.LobbyName, request.Password)
+        Lobbies[newLobby.Name] = &newLobby
+      } else if lobby.Password != request.Password {
+        return JSONStringify(StatusMessage {Status: "error", Message: "Ooops! Wrong password."})
       }
 
       // join the lobby
@@ -106,14 +107,37 @@ func main() {
       return JSONStringify(lobby)
     })
 
-    so.On(RequestEnterLobbyList, func(payload string) {
-      // now we send a list of the lobbies to the newly authenticated client.
+    so.On(RequestEnterLobbyList, func(s string) {
       so.Join(ChannelLobbyList)
       for _, lby := range Lobbies {
-        if lby.IsPublic {
-          so.Emit(EventLobbyInfoUpdate, JSONStringify(lby))
-        }
+        so.Emit(EventLobbyInfoUpdate, JSONStringify(lby))
       }
+    })
+
+    so.On(RequestUpdateVideo, func(payload string) string {
+      if userSession == nil {
+        return JSONStringify(StatusMessage {Status: "error", Message:"please authenticate before trying to join a lobby."})
+      }
+
+      video := Video {}
+      if err := json.Unmarshal([]byte(payload), &video); err != nil {
+        return JSONStringify(StatusMessage {Status: "error", Message: "Malformatted JSON Object"})
+      }
+
+      (*userSession).Lobby.UpdateVideo(video)
+
+      return JSONStringify(StatusMessage {Status: "ok", Message:"successfully updated video position."})
+    })
+
+    so.On(RequestVideoInfo, func(payload string) string {
+      if userSession == nil {
+        return JSONStringify(StatusMessage {Status: "error", Message:"please authenticate before trying to join a lobby."})
+      }
+
+      if userSession.Lobby != nil && userSession.Lobby.PlayingVideo != nil {
+        so.Emit(EventVideoUpdate, JSONStringify(userSession.Lobby.PlayingVideo))
+      }
+      return JSONStringify(StatusMessage {Status: "ok", Message:"successfully requested a status update."})
     })
 
     so.On("disconnection", func() {
@@ -135,6 +159,7 @@ func main() {
     w.Header().Set("Access-Control-Allow-Credentials", "true")
     Server.ServeHTTP(w, req)
   })
+
   // http.Handle("/socket.io/", Server)
   http.Handle("/", http.FileServer(http.Dir("./asset")))
   log.Println("Serving at localhost:5000...")
